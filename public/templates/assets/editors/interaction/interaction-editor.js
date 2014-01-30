@@ -30,8 +30,8 @@
     }
 
     // Listen for start/stop and disable/enable keyboard shortcuts
-    _popcorn.on( "interactionStart", blockShortcuts );
-    _popcorn.on( "interactionEnd", unblockShortcuts );
+    // _popcorn.on( "interactionStart", blockShortcuts );
+    // _popcorn.on( "interactionEnd", unblockShortcuts );
 
     /**
      * Member: setup
@@ -70,7 +70,7 @@
           _mousetrapHelper.bindInputTag( element, sequences[ OS + "Sequence" ], unblockShortcuts, blockShortcuts, function( newSequence ) {
             var newOptions = {};
 
-            newOptions[ OS + "Combo" ] = newSequence;
+            newOptions[ OS + "Sequence" ] = newSequence;
 
             trackEvent.update( newOptions );
           });
@@ -78,9 +78,9 @@
 
         var isMousetrapLoaded = function() {
           if ( _mousetrapHelper ) {
-            if ( key === "winCombo" ) {
+            if ( key === "winSequence" ) {
               processCombo( "win" );
-            } else if ( key === "macCombo" ) {
+            } else if ( key === "macSequence" ) {
               processCombo( "mac" );
             }
           } else {

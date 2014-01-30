@@ -9,7 +9,17 @@
   importMousetrap.src = "http://cdn.craig.is/js/mousetrap/mousetrap.min.js";
   importMousetrap.type = "text/javascript";
 
-  document.head.appendChild( importMousetrap );
+
+  document.getElementsByTagName( "head" )[ 0 ].appendChild( importMousetrap );
+
+  function stopPropagation( e ) {
+    if ( e.preventDefault ) {
+      e.preventDefault();
+    } else {
+      e.returnValue = false;
+    }
+    // e.stopPropagation();
+  }
 
   var isMouseTrapLoaded = function() {
     if ( window.Mousetrap ) {
@@ -73,7 +83,7 @@
           meta: "meta",
           pageup: "pageup",
           pagedown: "pagedown",
-          "return": "return",
+          " ": "return",
           right: "right",
           shift: "shift",
           space: "space",
@@ -140,7 +150,11 @@
 
         function keyComboCallback( e ) {
           console.error( "No callback has been specified for the mouseTrapHelper." );
-          e.preventDefault();
+          if ( e.preventDefault ) {
+            e.preventDefault();
+          } else {
+            e.returnValue = false;
+          }
         }
 
         // Removes all elements from the passed array reference
@@ -179,7 +193,11 @@
 
         function listenForAssignment( tag, sequence ) {
           function addKeyToSequence( e, combo ) {
-            e.preventDefault();
+            if ( e.preventDefault ) {
+              e.preventDefault();
+            } else {
+              e.returnValue = false;
+            }
             if ( sequence.length < MAX_KEYS_PER_SEQUENCE ) {
               sequence.push( combo );
             } else {
@@ -194,7 +212,10 @@
 
         // Generates a string indicating the allowed
         // key-combos in a way the Mousetrap library
-        // will understand
+        // will understand. Does some hacky tricks for
+        // multiple mod keys, which is why this exists
+        // along with sequenceToString().
+        //
         // i.e. ["ctrl", "a"] -> "ctrl+a"
         function sequenceToKeycombo( sequence ) {
           var modKeys = [],
@@ -274,7 +295,7 @@
         }
 
         return {
-          bindInputTag: function( tag, sequence, focus, unfocus, cb ) { // focuz = unblockshortcuts, unforcus = blockshortcuts
+          bindInputTag: function( tag, sequence, focus, unfocus, cb ) { // focus = unblockshortcuts, unfocus = blockshortcuts
             var workingSequence = [],
                 // This is crazy hacky, but it grabs the correct button
                 // for the passed tag.
@@ -287,7 +308,7 @@
               copyArray( sequence, workingSequence );
               tag.value = sequenceToString( sequence );
               cleanArray( workingSequence );
-              cb( sequenceToString( sequence ) );
+              cb( sequence );
             };
 
             // On focus, clear tag & working array values,
@@ -710,7 +731,7 @@
           keyboardType = "mac";
 
           for ( i = 0; i < winKeys.length; i++ ) {
-            currentKey = keys.getElementsByClassName( winKeys[ i ] );
+            currentKey = keys.querySelectorAll( "." + winKeys[ i ] );
 
             for ( j = 0; j < currentKey.length; j++ ) {
               currentKey[ j ].classList.add( "keyOff" );
@@ -718,7 +739,7 @@
           }
 
           for ( i = 0; i < macKeys.length; i++ ) {
-            currentKey = keys.getElementsByClassName( macKeys[ i ] );
+            currentKey = keys.querySelectorAll( "." + macKeys[ i ] );
 
             for ( j = 0; j < currentKey.length; j++ ) {
               currentKey[ j ].classList.remove( "keyOff" );
@@ -726,7 +747,7 @@
           }
         }
 
-        messageBox = keyboard.el.getElementsByClassName( "messageBox" )[ 0 ];
+        messageBox = keyboard.el.querySelectorAll( ".messageBox" )[ 0 ];
 
         element.appendChild( keys );
         localContainer = element;
@@ -742,7 +763,7 @@
         }
       },
       correctKey: function ( key ) {
-        keyElement = keyboard.el.getElementsByClassName( "key_" + key );
+        keyElement = keyboard.el.querySelectorAll( ".key_" + key );
         var length = keyElement && keyElement.length || 0;
 
         for ( var i = 0; i < length; i++ ) {
@@ -751,7 +772,7 @@
         }
       },
       keyOff: function ( key ) {
-        keyElement = keyboard.el.getElementsByClassName( "key_" + key );
+        keyElement = keyboard.el.querySelectorAll( ".key_" + key );
         var length = keyElement && keyElement.length || 0,
             classes;
 
@@ -768,7 +789,7 @@
         }
       },
       clearKeys: function () {
-        var validKeys = keyboard.el.getElementsByClassName( "valid" ),
+        var validKeys = keyboard.el.querySelectorAll( ".valid" ),
             validLength = validKeys && validKeys.length,
             i;
 
@@ -778,7 +799,7 @@
         // as many times as there are elements.
         if ( validLength ) {
           for ( i = 0; i < validLength; i++ ) {
-            validKeys[ 0 ].classList.remove( "valid" );
+            validKeys[ i ].classList.remove( "valid" );
           }
         }
       },
@@ -804,7 +825,11 @@
   }
 
   function keyUpCallback( e, combo ){
-    e.preventDefault();
+    if ( e.preventDefault ) {
+      e.preventDefault();
+    } else {
+      e.returnValue = false;
+    }
 
     _keyboardHelper.keyOff( combo );
   }
@@ -825,7 +850,12 @@
     // Cache resume playback callback
     var resumePlaybackConstructor = function ( combo ) {
       return function ( e ) {
-        e.preventDefault();
+        if ( e.preventDefault ) {
+          e.preventDefault();
+        } else {
+          e.returnValue = false;
+        }
+
         if ( combo.length ) {
           for ( var i = 0; i < combo.length; i++ ) {
             _keyboardHelper.correctKey( combo[ i ] );
@@ -886,7 +916,6 @@
 
         var isHelperReady = function() {
           if ( _mousetrapHelper ) {
-            that.emit( "interactionStart" );
             _keyboardHelper.showKeyboard();
 
             // Bind key listeners based on keyboard type
@@ -902,6 +931,7 @@
               }
             }
 
+            window.addEventListener( "keydown", stopPropagation, false );
             that.pause();
           } else {
             setTimeout(function(){
@@ -917,7 +947,6 @@
 
         var isHelperReady = function() {
           if ( _mousetrapHelper ) {
-            that.emit( "interactionEnd" );
             _keyboardHelper.hideKeyboard();
 
             // Remove keycombo bindings bindings
@@ -926,6 +955,8 @@
             } else {
               _mousetrapHelper.unbindSequence( sequences.macSequence );
             }
+
+            window.removeEventListener( "keydown", stopPropagation, false );
           } else {
             setTimeout(function(){
               isHelperReady();
@@ -961,13 +992,13 @@
       imgSrc: {
         hidden: true
       },
-      winCombo: {
+      winSequence: {
         label: "Win Combo",
         elem: "input",
         type: "text",
         readonly: true
       },
-      macCombo: {
+      macSequence: {
         label: "Mac Combo",
         elem: "input",
         type: "text",
